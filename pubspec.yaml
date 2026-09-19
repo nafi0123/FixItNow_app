@@ -1,0 +1,29 @@
+name: fix_it_now
+description: "FixItNow Frontend Flutter Application"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.2.0
+  flutter_dotenv: ^5.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  # assets সেকশনে .env ফাইলটি ডিক্লেয়ার করা হয়েছে
+  assets:
+    - .env
+
+  
