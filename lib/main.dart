@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // 👈 ১. ইমপোর্ট করুন
 
 import 'shared/widgets/custom_navbar.dart';
 import 'features/home/widgets/home_banner.dart';
-import 'features/home/widgets/popular_services_section.dart'; // 👈 ইমপোর্ট করুন
-import 'features/home/widgets/top_rated_technicians_section.dart'; // 👈 ইমপোর্ট করুন
+import 'features/home/widgets/popular_services_section.dart';
+import 'features/home/widgets/top_rated_technicians_section.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  runApp(const FixItNowApp());
+
+  // 👈 ২. ProviderScope দিয়ে runApp র‍্যাপ করুন
+  runApp(const ProviderScope(child: FixItNowApp()));
 }
 
 class FixItNowApp extends StatelessWidget {
@@ -39,7 +42,7 @@ class HomeScreen extends StatelessWidget {
           children: const [
             HomeBanner(),
             PopularServicesSection(),
-            TopRatedTechniciansSection(), // 👈 টপ রেটেড টেকনিশিয়ান সেকশন
+            TopRatedTechniciansSection(),
           ],
         ),
       ),
