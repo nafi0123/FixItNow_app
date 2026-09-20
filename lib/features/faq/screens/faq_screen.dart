@@ -78,9 +78,9 @@ class _FaqScreenState extends State<FaqScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.coral.withOpacity(0.12),
+                    color: AppColors.coral.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.coral.withOpacity(0.3)),
+                    border: Border.all(color: AppColors.coral.withValues(alpha: 0.3)),
                   ),
                   child: const Icon(Icons.help_outline_rounded, color: Color(0xFFC23B1F), size: 24),
                 ),
@@ -109,7 +109,7 @@ class _FaqScreenState extends State<FaqScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: faqs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final faq = faqs[index];
                     final isOpen = openIndex == index;
@@ -120,11 +120,11 @@ class _FaqScreenState extends State<FaqScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isOpen ? AppColors.coral.withOpacity(0.4) : const Color(0xFFE7E2D8),
+                          color: isOpen ? AppColors.coral.withValues(alpha: 0.4) : const Color(0xFFE7E2D8),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
+                            color: Colors.black.withValues(alpha: 0.02),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -197,7 +197,7 @@ class _FaqScreenState extends State<FaqScreen> {
                       colors: [Color(0xFFFFF6EA), Color(0xFFFFF0E2)],
                     ),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.coral.withOpacity(0.2)),
+                    border: Border.all(color: AppColors.coral.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     children: [

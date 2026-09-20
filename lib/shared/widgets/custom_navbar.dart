@@ -6,10 +6,12 @@ import 'package:http/http.dart' as http;
 import '../../core/constants/api_endpoints.dart';
 import '../../core/constants/app_colors.dart';
 import '../../features/categories/models/category_model.dart';
-import '../../features/faq/screens/faq_screen.dart'; // 👈 FAQ স্ক্রিন ইমপোর্ট
+import '../../features/faq/screens/faq_screen.dart';
 
 class CustomNavbar extends StatefulWidget implements PreferredSizeWidget {
-  const CustomNavbar({super.key});
+  final Function(int)? onTabSelected;
+
+  const CustomNavbar({super.key, this.onTabSelected});
 
   @override
   State<CustomNavbar> createState() => _CustomNavbarState();
@@ -113,56 +115,57 @@ class _CustomNavbarState extends State<CustomNavbar> {
               bottom: BorderSide(color: AppColors.border, width: 1),
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // লোগো
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.ink,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.build_rounded,
-                      color: AppColors.coral,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  RichText(
-                    text: const TextSpan(
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
+              // লোগো (ট্যাপ করলে Home ট্যাবে যাবে)
+              InkWell(
+                onTap: () => widget.onTabSelected?.call(0),
+                borderRadius: BorderRadius.circular(10),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.ink,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      children: [
-                        TextSpan(
-                          text: "FixIt",
-                          style: TextStyle(color: AppColors.ink),
-                        ),
-                        TextSpan(
-                          text: "Now",
-                          style: TextStyle(color: AppColors.coral),
-                        ),
-                      ],
+                      child: const Icon(
+                        Icons.build_rounded,
+                        color: AppColors.coral,
+                        size: 18,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: "FixIt",
+                            style: TextStyle(color: AppColors.ink),
+                          ),
+                          TextSpan(
+                            text: "Now",
+                            style: TextStyle(color: AppColors.coral),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               // মাঝের লিংকসমূহ (ডেস্কটপে)
               if (!isMobile)
                 Row(
                   children: [
-                    _navButton("Services"),
-                    _navButton("Technicians"),
-
-                    // ক্যাটাগরি ড্রপডাউন
+                    // ক্যাটাগরি ড্রপডাউন (ট্যাব ১)
                     PopupMenuButton<CategoryModel>(
                       offset: const Offset(0, 45),
                       shape: RoundedRectangleBorder(
@@ -235,18 +238,47 @@ class _CustomNavbarState extends State<CustomNavbar> {
                         }).toList();
                       },
                       onSelected: (cat) {
-                        debugPrint("Selected Category: ${cat.name}");
+                        widget.onTabSelected?.call(1); // 1. Category
                       },
                     ),
+
+                    _navButton("Services", () => widget.onTabSelected?.call(2)), // 2. Service
+                    _navButton("Technicians", () => widget.onTabSelected?.call(3)), // 3. Technician
+
+                    // FAQ লিংক ডেস্কটপে
+                    _navButton("FAQ", () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const FaqScreen()),
+                      );
+                    }),
                   ],
                 ),
 
               // ডানের বাটনসমূহ
               Row(
                 children: [
+                  // 🎯 FAQ কুইক হেল্প আইকন (সবার জন্য সহজেই অ্যাক্সেসযোগ্য)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.help_outline_rounded,
+                      color: AppColors.ink,
+                      size: 22,
+                    ),
+                    tooltip: "FAQ & Help",
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const FaqScreen()),
+                      );
+                    },
+                  ),
+
+                  // ডেস্কটপে লগইন ও গেট স্টার্টেড বাটন
                   if (!isMobile) ...[
+                    const SizedBox(width: 4),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () => widget.onTabSelected?.call(4), // 4. Account
                       child: const Text(
                         "Log in",
                         style: TextStyle(
@@ -255,48 +287,33 @@ class _CustomNavbarState extends State<CustomNavbar> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                  ],
-
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.person_outline,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-                    label: const Text(
-                      "Get started",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.coral,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                  ),
-
-                  // মোবাইল মেনু আইকন
-                  if (isMobile) ...[
-                    const SizedBox(width: 6),
-                    IconButton(
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () => widget.onTabSelected?.call(4), // 4. Account
                       icon: const Icon(
-                        Icons.menu_rounded,
-                        color: AppColors.ink,
-                        size: 26,
+                        Icons.person_outline,
+                        size: 16,
+                        color: Colors.white,
                       ),
-                      onPressed: () {
-                        Scaffold.of(context).openEndDrawer();
-                      },
+                      label: const Text(
+                        "Get started",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.coral,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -308,11 +325,11 @@ class _CustomNavbarState extends State<CustomNavbar> {
     );
   }
 
-  Widget _navButton(String title) {
+  Widget _navButton(String title, VoidCallback onTap) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: TextButton(
-        onPressed: () {},
+        onPressed: onTap,
         child: Text(
           title,
           style: const TextStyle(
@@ -322,276 +339,6 @@ class _CustomNavbarState extends State<CustomNavbar> {
           ),
         ),
       ),
-    );
-  }
-}
-
-// ----------------------------------------------------
-// মোবাইল ড্রয়ার (ক্লিন ও আলাদা FAQ পেজ নেভিগেশনসহ)
-// ----------------------------------------------------
-class MobileAppDrawer extends StatefulWidget {
-  const MobileAppDrawer({super.key});
-
-  @override
-  State<MobileAppDrawer> createState() => _MobileAppDrawerState();
-}
-
-class _MobileAppDrawerState extends State<MobileAppDrawer> {
-  List<CategoryModel> categories = [];
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchCategories();
-  }
-
-  Future<void> _fetchCategories() async {
-    try {
-      final response = await http.get(Uri.parse(ApiEndpoints.categories));
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        if (decoded['success'] == true && decoded['data'] is List) {
-          final List list = decoded['data'];
-          if (mounted) {
-            setState(() {
-              categories = list
-                  .map((json) => CategoryModel.fromJson(json))
-                  .toList();
-              isLoading = false;
-            });
-          }
-          return;
-        }
-      }
-    } catch (e) {
-      debugPrint("Drawer Categories Error: $e");
-    }
-
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: Colors.white,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // ১. হেডার
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppColors.ink,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.build_rounded,
-                          color: AppColors.coral,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: "FixIt",
-                              style: TextStyle(color: AppColors.ink),
-                            ),
-                            TextSpan(
-                              text: "Now",
-                              style: TextStyle(color: AppColors.coral),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.ink),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(height: 1, color: Color(0xFFE5E7EB)),
-
-            // ২. ড্রয়ার লিংকসমূহ
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                children: [
-                  _drawerTile(Icons.handyman_outlined, "Services", () {}),
-                  _drawerTile(Icons.people_alt_outlined, "Technicians", () {}),
-
-                  // ক্যাটাগরি মেনু
-                  Theme(
-                    data: Theme.of(context)
-                        .copyWith(dividerColor: Colors.transparent),
-                    child: ExpansionTile(
-                      key: const PageStorageKey('drawer_categories'),
-                      leading: const Icon(
-                        Icons.category_outlined,
-                        color: AppColors.coral,
-                        size: 20,
-                      ),
-                      title: const Text(
-                        "Categories",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      children: isLoading
-                          ? [
-                              const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ]
-                          : categories.map((cat) {
-                              return ListTile(
-                                dense: true,
-                                contentPadding: const EdgeInsets.only(
-                                  left: 48,
-                                  right: 16,
-                                ),
-                                leading: const Icon(
-                                  Icons.circle,
-                                  size: 6,
-                                  color: AppColors.teal,
-                                ),
-                                title: Text(
-                                  cat.name,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                },
-                              );
-                            }).toList(),
-                    ),
-                  ),
-
-                  // 🎯 নতুন আলাদা FAQ পেজের বাটন (ক্লিক করলেই আলাদা পেজ খুলবে)
-                  _drawerTile(Icons.help_outline_rounded, "FAQ & Help", () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FaqScreen(),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-
-            // ৩. নিচের বাটনসমূহ
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
-              ),
-              child: Column(
-                children: [
-                  OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 42),
-                      side: const BorderSide(color: Color(0xFFE5E7EB)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Log in",
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.coral,
-                      minimumSize: const Size(double.infinity, 42),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Get started",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _drawerTile(IconData icon, String title, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.teal, size: 20),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textDark,
-        ),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right_rounded,
-        size: 18,
-        color: Colors.grey,
-      ),
-      onTap: () {
-        Navigator.pop(context); // ড্রয়ার বন্ধ হবে
-        onTap(); // নতুন পেজ খুলবে
-      },
     );
   }
 }
