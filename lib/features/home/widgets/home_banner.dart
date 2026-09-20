@@ -38,9 +38,9 @@ class HomeBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: coral.withOpacity(0.35)),
+                  border: Border.all(color: coral.withValues(alpha: 0.35)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -122,7 +122,7 @@ class HomeBanner extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: coral.withOpacity(0.35),
+                          color: coral.withValues(alpha: 0.35),
                           blurRadius: 14,
                           offset: const Offset(0, 6),
                         ),
@@ -154,8 +154,8 @@ class HomeBanner extends StatelessWidget {
                   OutlinedButton(
                     onPressed: () {},
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.8),
-                      side: BorderSide(color: coral.withOpacity(0.35)),
+                      backgroundColor: Colors.white.withValues(alpha: 0.8),
+                      side: BorderSide(color: coral.withValues(alpha: 0.35)),
                       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -173,9 +173,9 @@ class HomeBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.65),
+                  color: Colors.white.withValues(alpha: 0.65),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: coral.withOpacity(0.18)),
+                  border: Border.all(color: coral.withValues(alpha: 0.18)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -218,7 +218,7 @@ class HomeBanner extends StatelessWidget {
     return Container(
       height: 22,
       width: 1,
-      color: coral.withOpacity(0.2),
+      color: coral.withValues(alpha: 0.2),
     );
   }
 }

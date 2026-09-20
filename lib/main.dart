@@ -3,6 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'shared/widgets/custom_navbar.dart';
 import 'features/home/widgets/home_banner.dart';
+import 'features/home/widgets/popular_services_section.dart'; // 👈 ইমপোর্ট করুন
+import 'features/home/widgets/top_rated_technicians_section.dart'; // 👈 ইমপোর্ট করুন
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,9 +33,15 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const CustomNavbar(),
-      endDrawer: const MobileAppDrawer(), // 👈 এই ড্রয়ারটি যোগ করা হয়েছে
+      endDrawer: const MobileAppDrawer(),
       body: SingleChildScrollView(
-        child: Column(children: const [HomeBanner()]),
+        child: Column(
+          children: const [
+            HomeBanner(),
+            PopularServicesSection(),
+            TopRatedTechniciansSection(), // 👈 টপ রেটেড টেকনিশিয়ান সেকশন
+          ],
+        ),
       ),
     );
   }

@@ -7,4 +7,5 @@ class AppColors {
   static const Color teal = Color(0xFF0FA894);      // লাইভ স্ট্যাটাস গ্রিন
   static const Color border = Color(0xFFE5E7EB);    // বর্ডার কালার
   static const Color textDark = Color(0xFF1F2937);  // টেক্সট কালার
+  static const Color textMuted = Color(0xFF6B707E); // 👈 গ্রে সাবটাইটেল কালার
 }
