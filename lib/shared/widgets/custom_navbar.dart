@@ -1,9 +1,12 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
 import '../../core/constants/api_endpoints.dart';
 import '../../core/constants/app_colors.dart';
 import '../../features/categories/models/category_model.dart';
+import '../../features/faq/screens/faq_screen.dart'; // 👈 FAQ স্ক্রিন ইমপোর্ট
 
 class CustomNavbar extends StatefulWidget implements PreferredSizeWidget {
   const CustomNavbar({super.key});
@@ -34,7 +37,9 @@ class _CustomNavbarState extends State<CustomNavbar> {
           final List list = decoded['data'];
           if (mounted) {
             setState(() {
-              categories = list.map((json) => CategoryModel.fromJson(json)).toList();
+              categories = list
+                  .map((json) => CategoryModel.fromJson(json))
+                  .toList();
               isLoadingCategories = false;
             });
           }
@@ -59,13 +64,11 @@ class _CustomNavbarState extends State<CustomNavbar> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ১. টপ সিগনেচার গ্রেডিয়েন্ট লাইন (Coral -> Teal)
+        // ১. টপ গ্রেডিয়েন্ট লাইন (Coral -> Teal)
         Container(
           height: 3,
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.coral, AppColors.teal],
-            ),
+            gradient: LinearGradient(colors: [AppColors.coral, AppColors.teal]),
           ),
         ),
 
@@ -106,7 +109,9 @@ class _CustomNavbarState extends State<CustomNavbar> {
         Container(
           decoration: const BoxDecoration(
             color: AppColors.cream,
-            border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+            border: Border(
+              bottom: BorderSide(color: AppColors.border, width: 1),
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Row(
@@ -121,15 +126,29 @@ class _CustomNavbarState extends State<CustomNavbar> {
                       color: AppColors.ink,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.build_rounded, color: AppColors.coral, size: 18),
+                    child: const Icon(
+                      Icons.build_rounded,
+                      color: AppColors.coral,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   RichText(
                     text: const TextSpan(
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
                       children: [
-                        TextSpan(text: "FixIt", style: TextStyle(color: AppColors.ink)),
-                        TextSpan(text: "Now", style: TextStyle(color: AppColors.coral)),
+                        TextSpan(
+                          text: "FixIt",
+                          style: TextStyle(color: AppColors.ink),
+                        ),
+                        TextSpan(
+                          text: "Now",
+                          style: TextStyle(color: AppColors.coral),
+                        ),
                       ],
                     ),
                   ),
@@ -146,9 +165,14 @@ class _CustomNavbarState extends State<CustomNavbar> {
                     // ক্যাটাগরি ড্রপডাউন
                     PopupMenuButton<CategoryModel>(
                       offset: const Offset(0, 45),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         child: Row(
                           children: [
                             const Text(
@@ -164,9 +188,15 @@ class _CustomNavbarState extends State<CustomNavbar> {
                                 ? const SizedBox(
                                     width: 12,
                                     height: 12,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
-                                : const Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.grey),
+                                : const Icon(
+                                    Icons.keyboard_arrow_down,
+                                    size: 18,
+                                    color: Colors.grey,
+                                  ),
                           ],
                         ),
                       ),
@@ -175,8 +205,11 @@ class _CustomNavbarState extends State<CustomNavbar> {
                           return [
                             const PopupMenuItem(
                               enabled: false,
-                              child: Text("No categories found", style: TextStyle(fontSize: 12)),
-                            )
+                              child: Text(
+                                "No categories found",
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
                           ];
                         }
                         return categories.map((cat) {
@@ -184,9 +217,18 @@ class _CustomNavbarState extends State<CustomNavbar> {
                             value: cat,
                             child: Row(
                               children: [
-                                const Icon(Icons.circle, size: 8, color: AppColors.coral),
+                                const Icon(
+                                  Icons.circle,
+                                  size: 8,
+                                  color: AppColors.coral,
+                                ),
                                 const SizedBox(width: 10),
-                                Text(cat.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                                Text(
+                                  cat.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ],
                             ),
                           );
@@ -207,37 +249,53 @@ class _CustomNavbarState extends State<CustomNavbar> {
                       onPressed: () {},
                       child: const Text(
                         "Log in",
-                        style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                   ],
 
-                  // Get Started Button
                   ElevatedButton.icon(
                     onPressed: () {},
-                    icon: const Icon(Icons.person_outline, size: 16, color: Colors.white),
+                    icon: const Icon(
+                      Icons.person_outline,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                     label: const Text(
                       "Get started",
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.coral,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
                   ),
 
-                  // মোবাইল মেনু আইকন (ডান পাশ থেকে ড্রয়ার খুলবে)
+                  // মোবাইল মেনু আইকন
                   if (isMobile) ...[
                     const SizedBox(width: 6),
                     IconButton(
-                      icon: const Icon(Icons.menu_rounded, color: AppColors.ink, size: 26),
+                      icon: const Icon(
+                        Icons.menu_rounded,
+                        color: AppColors.ink,
+                        size: 26,
+                      ),
                       onPressed: () {
-                        Scaffold.of(context).openEndDrawer(); // 👈 ডান পাশের মেনু খুলবে
+                        Scaffold.of(context).openEndDrawer();
                       },
                     ),
                   ],
@@ -269,7 +327,7 @@ class _CustomNavbarState extends State<CustomNavbar> {
 }
 
 // ----------------------------------------------------
-// মোবাইল ড্রয়ার উইজেট (Mobile Sliding Drawer)
+// মোবাইল ড্রয়ার (ক্লিন ও আলাদা FAQ পেজ নেভিগেশনসহ)
 // ----------------------------------------------------
 class MobileAppDrawer extends StatefulWidget {
   const MobileAppDrawer({super.key});
@@ -297,7 +355,9 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
           final List list = decoded['data'];
           if (mounted) {
             setState(() {
-              categories = list.map((json) => CategoryModel.fromJson(json)).toList();
+              categories = list
+                  .map((json) => CategoryModel.fromJson(json))
+                  .toList();
               isLoading = false;
             });
           }
@@ -322,7 +382,7 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
       child: SafeArea(
         child: Column(
           children: [
-            // হেডার: লোগো ও ক্লোজ বাটন
+            // ১. হেডার
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
@@ -336,15 +396,28 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
                           color: AppColors.ink,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.build_rounded, color: AppColors.coral, size: 16),
+                        child: const Icon(
+                          Icons.build_rounded,
+                          color: AppColors.coral,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       RichText(
                         text: const TextSpan(
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                           children: [
-                            TextSpan(text: "FixIt", style: TextStyle(color: AppColors.ink)),
-                            TextSpan(text: "Now", style: TextStyle(color: AppColors.coral)),
+                            TextSpan(
+                              text: "FixIt",
+                              style: TextStyle(color: AppColors.ink),
+                            ),
+                            TextSpan(
+                              text: "Now",
+                              style: TextStyle(color: AppColors.coral),
+                            ),
                           ],
                         ),
                       ),
@@ -360,22 +433,35 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
 
             const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
-            // মেনু লিংকসমূহ
+            // ২. ড্রয়ার লিংকসমূহ
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 children: [
                   _drawerTile(Icons.handyman_outlined, "Services", () {}),
                   _drawerTile(Icons.people_alt_outlined, "Technicians", () {}),
 
-                  // ক্যাটাগরি এক্সপ্যান্ডেবল মেনু (API থেকে আসা ডাটা)
+                  // ক্যাটাগরি মেনু
                   Theme(
-                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                    data: Theme.of(context)
+                        .copyWith(dividerColor: Colors.transparent),
                     child: ExpansionTile(
-                      leading: const Icon(Icons.category_outlined, color: AppColors.coral, size: 20),
+                      key: const PageStorageKey('drawer_categories'),
+                      leading: const Icon(
+                        Icons.category_outlined,
+                        color: AppColors.coral,
+                        size: 20,
+                      ),
                       title: const Text(
                         "Categories",
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
                       ),
                       children: isLoading
                           ? [
@@ -385,7 +471,9 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
                                   child: SizedBox(
                                     width: 16,
                                     height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -393,11 +481,21 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
                           : categories.map((cat) {
                               return ListTile(
                                 dense: true,
-                                contentPadding: const EdgeInsets.only(left: 48, right: 16),
-                                leading: const Icon(Icons.circle, size: 6, color: AppColors.teal),
+                                contentPadding: const EdgeInsets.only(
+                                  left: 48,
+                                  right: 16,
+                                ),
+                                leading: const Icon(
+                                  Icons.circle,
+                                  size: 6,
+                                  color: AppColors.teal,
+                                ),
                                 title: Text(
                                   cat.name,
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                                 onTap: () {
                                   Navigator.pop(context);
@@ -406,13 +504,23 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
                             }).toList(),
                     ),
                   ),
+
+                  // 🎯 নতুন আলাদা FAQ পেজের বাটন (ক্লিক করলেই আলাদা পেজ খুলবে)
+                  _drawerTile(Icons.help_outline_rounded, "FAQ & Help", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FaqScreen(),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
 
-            // নিচের লগইন ও রেজিস্ট্রেশন বাটন
+            // ৩. নিচের বাটনসমূহ
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
               ),
@@ -421,21 +529,39 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
                   OutlinedButton(
                     onPressed: () {},
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 44),
+                      minimumSize: const Size(double.infinity, 42),
                       side: const BorderSide(color: Color(0xFFE5E7EB)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: const Text("Log in", style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      "Log in",
+                      style: TextStyle(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.coral,
-                      minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      minimumSize: const Size(double.infinity, 42),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: const Text("Get started", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      "Get started",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -449,11 +575,22 @@ class _MobileAppDrawerState extends State<MobileAppDrawer> {
   Widget _drawerTile(IconData icon, String title, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: AppColors.teal, size: 20),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textDark)),
-      trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textDark,
+        ),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: Colors.grey,
+      ),
       onTap: () {
-        Navigator.pop(context);
-        onTap();
+        Navigator.pop(context); // ড্রয়ার বন্ধ হবে
+        onTap(); // নতুন পেজ খুলবে
       },
     );
   }

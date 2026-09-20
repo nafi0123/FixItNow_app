@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 👈 ১. ইমপোর্ট করুন
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'shared/widgets/custom_navbar.dart';
 import 'features/home/widgets/home_banner.dart';
@@ -11,7 +11,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
 
-  // 👈 ২. ProviderScope দিয়ে runApp র‍্যাপ করুন
   runApp(const ProviderScope(child: FixItNowApp()));
 }
 
@@ -36,13 +35,14 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const CustomNavbar(),
-      endDrawer: const MobileAppDrawer(),
+      endDrawer: const MobileAppDrawer(), // 👈 ড্রয়ারের ভেতরেই এখন সব FAQ & Support থাকবে
       body: SingleChildScrollView(
         child: Column(
           children: const [
             HomeBanner(),
             PopularServicesSection(),
             TopRatedTechniciansSection(),
+            SizedBox(height: 30), // বটমে সামান্য প্যাডিং
           ],
         ),
       ),

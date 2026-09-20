@@ -111,7 +111,7 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.coral.withOpacity(0.12),
+                color: AppColors.coral.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -177,7 +177,7 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         itemCount: technicians.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        separatorBuilder: (_, _) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
           final tech = technicians[index];
           return _buildTechnicianCard(tech);
@@ -198,7 +198,7 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
         border: Border.all(color: const Color(0xFFE7E2D8)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -344,7 +344,7 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.teal.withOpacity(0.1),
+                    color: AppColors.teal.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -403,7 +403,7 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 3,
-        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        separatorBuilder: (_, _) => const SizedBox(width: 14),
         itemBuilder: (context, index) {
           return Container(
             width: 280,
