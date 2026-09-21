@@ -7,6 +7,7 @@ import '../../core/constants/api_endpoints.dart';
 import '../../core/constants/app_colors.dart';
 import '../../features/categories/models/category_model.dart';
 import '../../features/faq/screens/faq_screen.dart';
+import '../../features/services/screens/services_screen.dart';
 
 class CustomNavbar extends StatefulWidget implements PreferredSizeWidget {
   final Function(int)? onTabSelected;
@@ -238,7 +239,15 @@ class _CustomNavbarState extends State<CustomNavbar> {
                         }).toList();
                       },
                       onSelected: (cat) {
-                        widget.onTabSelected?.call(1); // 1. Category
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ServicesScreen(
+                              initialCategoryId: cat.id,
+                              initialCategoryName: cat.name,
+                            ),
+                          ),
+                        );
                       },
                     ),
 

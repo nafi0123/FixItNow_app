@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../categories/models/category_model.dart';
+import '../../services/screens/services_screen.dart';
 
 class PopularServicesSection extends StatefulWidget {
   const PopularServicesSection({super.key});
@@ -174,7 +175,14 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
 
         // ডানের ভিউ অল বাটন
         TextButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ServicesScreen(),
+              ),
+            );
+          },
           style: TextButton.styleFrom(padding: EdgeInsets.zero),
           child: Row(
             children: const [
@@ -222,7 +230,15 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
   Widget _buildCategoryCard(CategoryModel cat, IconData icon) {
     return InkWell(
       onTap: () {
-        debugPrint("Selected Service: ${cat.name}");
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServicesScreen(
+              initialCategoryId: cat.id,
+              initialCategoryName: cat.name,
+            ),
+          ),
+        );
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(

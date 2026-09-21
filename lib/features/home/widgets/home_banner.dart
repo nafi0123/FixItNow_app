@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/screens/services_screen.dart';
+import '../../technicians/screens/technicians_screen.dart';
 
 class HomeBanner extends StatelessWidget {
   const HomeBanner({super.key});
@@ -129,7 +131,14 @@ class HomeBanner extends StatelessWidget {
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ServicesScreen(),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -152,7 +161,14 @@ class HomeBanner extends StatelessWidget {
 
                   // Earn as a technician বাটন
                   OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TechniciansScreen(),
+                        ),
+                      );
+                    },
                     style: OutlinedButton.styleFrom(
                       backgroundColor: Colors.white.withValues(alpha: 0.8),
                       side: BorderSide(color: coral.withValues(alpha: 0.35)),

@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../categories/models/category_model.dart';
+import 'technician_detail_screen.dart';
 import '../models/technician_model.dart';
 
 class TechniciansScreen extends StatefulWidget {
@@ -256,6 +257,25 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8F5),
+      appBar: Navigator.canPop(context)
+          ? AppBar(
+              backgroundColor: AppColors.ink,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                "Technicians Directory",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : null,
       body: RefreshIndicator(
         color: AppColors.coral,
         onRefresh: () => _fetchTechnicians(page: 1, isRefresh: true),
@@ -909,10 +929,13 @@ class _TechniciansScreenState extends State<TechniciansScreen> {
               ),
               InkWell(
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Viewing profile of ${tech.name}"),
-                      duration: const Duration(seconds: 1),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TechnicianDetailScreen(
+                        technicianId: tech.id,
+                        initialName: tech.name,
+                      ),
                     ),
                   );
                 },

@@ -7,10 +7,18 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../categories/models/category_model.dart';
+import '../../technicians/screens/technician_detail_screen.dart';
 import '../models/service_model.dart';
 
 class ServicesScreen extends StatefulWidget {
-  const ServicesScreen({super.key});
+  final String? initialCategoryId;
+  final String? initialCategoryName;
+
+  const ServicesScreen({
+    super.key,
+    this.initialCategoryId,
+    this.initialCategoryName,
+  });
 
   @override
   State<ServicesScreen> createState() => _ServicesScreenState();
@@ -37,6 +45,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedCategoryId = widget.initialCategoryId;
     _fetchCategories();
     _fetchServices(page: 1);
 
@@ -172,6 +181,27 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8F5),
+      appBar: Navigator.canPop(context)
+          ? AppBar(
+              backgroundColor: AppColors.ink,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text(
+                widget.initialCategoryName != null
+                    ? "${widget.initialCategoryName} Services"
+                    : "Services Directory",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : null,
       body: RefreshIndicator(
         color: AppColors.coral,
         onRefresh: () => _fetchServices(page: 1, isRefresh: true),
@@ -683,12 +713,25 @@ class _ServicesScreenState extends State<ServicesScreen> {
               ),
               InkWell(
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Viewing technician for ${service.name}"),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
+                  if (service.technicianId != null &&
+                      service.technicianId!.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TechnicianDetailScreen(
+                          technicianId: service.technicianId!,
+                          initialName: service.technicianName,
+                        ),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Technician details not available"),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
                 },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(

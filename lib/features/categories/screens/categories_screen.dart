@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/constants/app_colors.dart';
 import '../models/category_model.dart';
+import '../../services/screens/services_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -167,6 +168,25 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8F5),
+      appBar: Navigator.canPop(context)
+          ? AppBar(
+              backgroundColor: AppColors.ink,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                "Service Categories",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : null,
       body: RefreshIndicator(
         color: AppColors.coral,
         onRefresh: () => _fetchCategories(page: 1, isRefresh: true),
@@ -429,10 +449,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Selected: ${cat.name}"),
-                duration: const Duration(seconds: 1),
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ServicesScreen(
+                  initialCategoryId: cat.id,
+                  initialCategoryName: cat.name,
+                ),
               ),
             );
           },
@@ -509,16 +532,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
-                      "Browse",
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.coral,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "Browse ${cat.name} Services",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.coral,
+                        ),
                       ),
                     ),
-                    Icon(
+                    const SizedBox(width: 4),
+                    const Icon(
                       Icons.arrow_forward_rounded,
                       size: 14,
                       color: AppColors.coral,

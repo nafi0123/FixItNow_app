@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../technicians/models/technician_model.dart';
+import '../../technicians/screens/technicians_screen.dart';
+import '../../technicians/screens/technician_detail_screen.dart';
 
 class TopRatedTechniciansSection extends StatefulWidget {
   const TopRatedTechniciansSection({super.key});
@@ -152,7 +154,14 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
 
         // ভিউ অল বাটন
         TextButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TechniciansScreen(),
+              ),
+            );
+          },
           style: TextButton.styleFrom(padding: EdgeInsets.zero),
           child: Row(
             children: const [
@@ -189,8 +198,21 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
   Widget _buildTechnicianCard(TechnicianModel tech) {
     final initials = _getInitials(tech.name);
 
-    return Container(
-      width: 280, // ফিক্সড কার্ড প্রস্থ
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TechnicianDetailScreen(
+              technicianId: tech.id,
+              initialName: tech.name,
+            ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: 280, // ফিক্সড কার্ড প্রস্থ
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -373,7 +395,15 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
               ),
               ElevatedButton(
                 onPressed: () {
-                  debugPrint("View Profile of ${tech.name}");
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TechnicianDetailScreen(
+                        technicianId: tech.id,
+                        initialName: tech.name,
+                      ),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.coral,
@@ -394,7 +424,8 @@ class _TopRatedTechniciansSectionState extends State<TopRatedTechniciansSection>
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildLoadingList() {
