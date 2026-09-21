@@ -27,7 +27,10 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
 
   Future<void> fetchCategories() async {
     try {
-      final response = await http.get(Uri.parse(ApiEndpoints.categories));
+      // 👈 ?limit=8 সহ রিকোয়েস্ট পাঠাবে
+      final response = await http.get(
+        Uri.parse("${ApiEndpoints.categories}?limit=8"),
+      );
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -35,8 +38,10 @@ class _PopularServicesSectionState extends State<PopularServicesSection> {
           final List list = decoded['data'];
           if (mounted) {
             setState(() {
+              // 👈 সর্বোচ্চ সাম্প্রতিক ৮টি ক্যাটাগরি রাখা হলো
               categories = list
                   .map((json) => CategoryModel.fromJson(json))
+                  .take(8)
                   .toList();
               isLoading = false;
             });

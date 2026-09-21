@@ -34,11 +34,15 @@ class TechnicianModel {
       email: user?['email'] ?? '',
       bio: json['bio'],
       skills: skillsRaw.map((e) => e.toString()).toList(),
-      experienceYears: (json['experienceYears'] ?? json['experience'] ?? 1) as int,
+      experienceYears:
+          (json['experienceYears'] ?? json['experience'] ?? 1) as int,
       basePrice: (json['basePrice'] ?? json['hourlyRate'] ?? 0).toDouble(),
       location: json['location'] ?? 'Dhaka, Bangladesh',
       rating: (json['rating'] ?? 5.0).toDouble(),
-      isAvailable: avail?['isAvailable'] ?? true,
+      isAvailable:
+          (avail?['isAvailable'] as bool?) ??
+          (json['isAvailable'] as bool?) ??
+          true,
     );
   }
 }
