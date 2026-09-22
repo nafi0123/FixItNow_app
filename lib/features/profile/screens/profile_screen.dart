@@ -1,9 +1,108 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../faq/screens/faq_screen.dart';
+import '../../auth/models/user_model.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../auth/screens/login_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  UserModel? _currentUser;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  // 🌟 মেমোরি ক্যাশ এবং লোকাল স্টোরেজ থেকে ইনস্ট্যান্ট লোড
+  Future<void> _loadUserProfile({bool silent = false}) async {
+    // ক্যাশ ফার্স্ট চেক
+    final cached = AuthService.currentUser;
+    if (cached != null && !silent) {
+      setState(() {
+        _currentUser = cached;
+        _isLoading = false;
+      });
+    }
+
+    // ব্যাকগ্রাউন্ড স্টোরেজ রিফ্রেশ
+    final user = await AuthService.getUser(forceRefresh: true);
+    if (mounted) {
+      setState(() {
+        _currentUser = user;
+        _isLoading = false;
+      });
+    }
+  }
+
+  // 🌟 লগআউট ডায়ালগ
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: Color(0xFFE11D48), size: 22),
+            SizedBox(width: 8),
+            Text(
+              "Log Out",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: AppColors.ink,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          "Are you sure you want to log out from your account?",
+          style: TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              "Cancel",
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await AuthService.logout();
+              _loadUserProfile(silent: true);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Color(0xFF1E2026),
+                    content: Text("Logged out successfully"),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE11D48),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text("Log Out", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,214 +125,350 @@ class ProfileScreen extends StatelessWidget {
           child: Container(color: AppColors.border, height: 1),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ১. ইউজার প্রোফাইল কার্ড / লগইন প্রম্পট
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
+      body: _isLoading
+          ? const _ProfileScreenSkeleton()
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: AppColors.coral.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
+                      // ১. ইউজার লগইন থাকলে প্রোফাইল কার্ড, না থাকলে লগইন প্রম্পট কার্ড
+                      _currentUser != null
+                          ? _buildLoggedInCard()
+                          : _buildLoggedOutCard(),
+
+                      const SizedBox(height: 24),
+
+                      // ২. ড্যাশবোর্ড ও অ্যাকশন সেকশন (যদি লগইন থাকে)
+                      if (_currentUser != null) ...[
+                        const Text(
+                          'MY DASHBOARD & BOOKINGS',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.1,
+                            color: AppColors.textMuted,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: AppColors.coral,
-                          size: 32,
+                        const SizedBox(height: 10),
+
+                        // 🎯 ড্যাশবোর্ড বাটন (Role অনুযায়ী)
+                        _optionTile(
+                          context,
+                          icon: Icons.dashboard_rounded,
+                          iconColor: AppColors.coral,
+                          title: "${_currentUser!.role} Dashboard",
+                          subtitle: "Manage your bookings, requests & stats",
+                          badgeText: _currentUser!.role,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Opening ${_currentUser!.role} Dashboard",
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+
+                        // মাই বুকিংস / হিস্ট্রি
+                        _optionTile(
+                          context,
+                          icon: Icons.calendar_month_rounded,
+                          iconColor: const Color(0xFF0FA894),
+                          title: "My Bookings & History",
+                          subtitle: "Track live status and past service orders",
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("My Bookings feature coming next!"),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // ৩. সাপোর্ট ও হেল্প সেকশন
+                      const Text(
+                        'SUPPORT & HELP',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1,
+                          color: AppColors.textMuted,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                      const SizedBox(height: 10),
+
+                      // FAQ টাইল
+                      _optionTile(
+                        context,
+                        icon: Icons.help_outline_rounded,
+                        iconColor: AppColors.coral,
+                        title: 'FAQ & Help Center',
+                        subtitle: 'Common questions answered clearly',
+                        badgeText: 'Important',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FaqScreen(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // কাস্টমার সাপোর্ট টাইল
+                      _optionTile(
+                        context,
+                        icon: Icons.support_agent_rounded,
+                        iconColor: AppColors.teal,
+                        title: '24/7 Live Support',
+                        subtitle: 'Talk directly with support team',
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Support Hotline: +880 1700-000000'),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // ৪. লগআউট বাটন (ইউজার লগইন থাকলে দেখাবে)
+                      if (_currentUser != null) ...[
+                        const SizedBox(height: 14),
+                        _optionTile(
+                          context,
+                          icon: Icons.logout_rounded,
+                          iconColor: const Color(0xFFE11D48),
+                          title: 'Log Out',
+                          subtitle: 'Sign out from this device',
+                          onTap: _confirmLogout,
+                        ),
+                      ],
+
+                      const SizedBox(height: 30),
+
+                      // ৫. অ্যাপ ভার্সন ফুটার
+                      Center(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: const [
                             Text(
-                              'Welcome to FixItNow',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.ink,
-                              ),
+                              'FixItNow App v1.0.0',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'Sign in to book & track technicians',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textMuted,
-                              ),
+                              'Fast, Reliable On-Demand Repairs',
+                              style: TextStyle(fontSize: 11, color: Colors.grey),
                             ),
                           ],
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Login / Auth flow coming next!'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.coral,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Text(
-                          'Log In',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
+              ),
+            ),
+    );
+  }
 
-                const SizedBox(height: 24),
+  // 🌟 ১. লগইন করা ইউজারের প্রোফাইল কার্ড
+  Widget _buildLoggedInCard() {
+    final initials = _currentUser!.name.isNotEmpty
+        ? _currentUser!.name[0].toUpperCase()
+        : 'U';
 
-                // ২. হেল্প ও সাপোর্ট সেকশন (FAQ সেকশন এখানে প্রধান প্রাধান্য পাবে)
-                const Text(
-                  'SUPPORT & HELP',
-                  style: TextStyle(
+    final isCustomer = _currentUser!.role == 'CUSTOMER';
+    final isTech = _currentUser!.role == 'TECHNICIAN';
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: AppColors.ink,
+            child: Text(
+              initials,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _currentUser!.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isTech
+                            ? const Color(0xFFECFDF5)
+                            : isCustomer
+                                ? const Color(0xFFFFFBEB)
+                                : const Color(0xFFFFF1F2),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isTech
+                              ? const Color(0xFFA7F3D0)
+                              : isCustomer
+                                  ? const Color(0xFFFDE68A)
+                                  : const Color(0xFFFECDD3),
+                        ),
+                      ),
+                      child: Text(
+                        _currentUser!.role,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          color: isTech
+                              ? const Color(0xFF059669)
+                              : isCustomer
+                                  ? const Color(0xFFD97706)
+                                  : const Color(0xFFE11D48),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _currentUser!.email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
                     color: AppColors.textMuted,
                   ),
                 ),
-                const SizedBox(height: 10),
-
-                // 🎯 FAQ & Help Center টাইল
-                _optionTile(
-                  context,
-                  icon: Icons.help_outline_rounded,
-                  iconColor: AppColors.coral,
-                  title: 'FAQ & Help Center',
-                  subtitle: 'Common questions answered clearly',
-                  badgeText: 'Important',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FaqScreen(),
-                      ),
-                    );
-                  },
-                ),
-
-                // ২৪/৭ কাস্টমার সাপোর্ট টাইল
-                _optionTile(
-                  context,
-                  icon: Icons.support_agent_rounded,
-                  iconColor: AppColors.teal,
-                  title: '24/7 Live Support',
-                  subtitle: 'Talk directly with support team',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Support Hotline: +880 1700-000000'),
-                      ),
-                    );
-                  },
-                ),
-
-                // শর্তাবলী ও প্রাইভেসি
-                _optionTile(
-                  context,
-                  icon: Icons.shield_outlined,
-                  iconColor: const Color(0xFF6366F1),
-                  title: 'Terms & Privacy Policy',
-                  subtitle: 'Safety, rights and platform rules',
-                  onTap: () {},
-                ),
-
-                const SizedBox(height: 24),
-
-                // ৩. জেনারেল সেটিংস
-                const Text(
-                  'PREFERENCES',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                _optionTile(
-                  context,
-                  icon: Icons.language_rounded,
-                  iconColor: Colors.orange,
-                  title: 'Language / ভাষা',
-                  subtitle: 'English / বাংলা',
-                  onTap: () {},
-                ),
-
-                _optionTile(
-                  context,
-                  icon: Icons.notifications_none_rounded,
-                  iconColor: Colors.purple,
-                  title: 'Notifications',
-                  subtitle: 'Booking alerts and updates',
-                  onTap: () {},
-                ),
-
-                const SizedBox(height: 30),
-
-                // অ্যাপ ভার্সন ফুটার
-                Center(
-                  child: Column(
-                    children: const [
-                      Text(
-                        'FixItNow App v1.0.0',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Fast, Reliable On-Demand Repairs',
-                        style: TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
               ],
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  // 🌟 ২. লগআউট অবস্থায় প্রম্পট কার্ড
+  Widget _buildLoggedOutCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppColors.coral.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              color: AppColors.coral,
+              size: 32,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Welcome to FixItNow',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Sign in to book & track technicians',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final loggedIn = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
+                ),
+              );
+              if (loggedIn == true) {
+                _loadUserProfile();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.coral,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              'Log In',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -294,13 +529,13 @@ class ProfileScreen extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.coral.withValues(alpha: 0.12),
+                                color: iconColor.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 badgeText,
-                                style: const TextStyle(
-                                  color: AppColors.coral,
+                                style: TextStyle(
+                                  color: iconColor,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -330,6 +565,194 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ========================================================
+// 🌟 প্রোফাইল স্ক্রিন অ্যানিমেটেড শিমার স্কেলেটন (Pure Flutter)
+// ========================================================
+class _ProfileScreenSkeleton extends StatefulWidget {
+  const _ProfileScreenSkeleton();
+
+  @override
+  State<_ProfileScreenSkeleton> createState() => _ProfileScreenSkeletonState();
+}
+
+class _ProfileScreenSkeletonState extends State<_ProfileScreenSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _opacityAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+
+    _opacityAnim = Tween<double>(begin: 0.35, end: 0.85).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _opacityAnim,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacityAnim.value,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ১. প্রোফাইল কার্ড স্কেলেটন
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE2E4E8),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 140,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE2E4E8),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: 180,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF0F1F3),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 60,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2E4E8),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ২. সেকশন হেডিং স্কেলেটন
+                    Container(
+                      width: 120,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E4E8),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ৩. অপশন টাইলস স্কেলেটন
+                    ...List.generate(3, (i) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0F1F3),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 130,
+                                    height: 14,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE2E4E8),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    width: 190,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0F1F3),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              width: 14,
+                              height: 14,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFE2E4E8),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

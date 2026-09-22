@@ -14,6 +14,7 @@ dependencies:
   http: ^1.2.0
   flutter_dotenv: ^5.2.1
   flutter_riverpod: ^2.6.1 # 👈 এটি যোগ করুন
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
