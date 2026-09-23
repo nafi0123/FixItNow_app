@@ -24,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // 🌟 মেমোরি ক্যাশ এবং লোকাল স্টোরেজ থেকে ইনস্ট্যান্ট লোড
   Future<void> _loadUserProfile({bool silent = false}) async {
-    // ক্যাশ ফার্স্ট চেক
     final cached = AuthService.currentUser;
     if (cached != null && !silent) {
       setState(() {
@@ -33,7 +32,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
 
-    // ব্যাকগ্রাউন্ড স্টোরেজ রিফ্রেশ
     final user = await AuthService.getUser(forceRefresh: true);
     if (mounted) {
       setState(() {
@@ -142,53 +140,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 24),
 
-                      // ২. ড্যাশবোর্ড ও অ্যাকশন সেকশন (যদি লগইন থাকে)
+                      // 🌟 ২. ওয়েবের মতো হুবহু রোল ভিত্তিক ডায়নামিক মেনু
                       if (_currentUser != null) ...[
-                        const Text(
-                          'MY DASHBOARD & BOOKINGS',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.1,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-
-                        // 🎯 ড্যাশবোর্ড বাটন (Role অনুযায়ী)
-                        _optionTile(
-                          context,
-                          icon: Icons.dashboard_rounded,
-                          iconColor: AppColors.coral,
-                          title: "${_currentUser!.role} Dashboard",
-                          subtitle: "Manage your bookings, requests & stats",
-                          badgeText: _currentUser!.role,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  "Opening ${_currentUser!.role} Dashboard",
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                        // মাই বুকিংস / হিস্ট্রি
-                        _optionTile(
-                          context,
-                          icon: Icons.calendar_month_rounded,
-                          iconColor: const Color(0xFF0FA894),
-                          title: "My Bookings & History",
-                          subtitle: "Track live status and past service orders",
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("My Bookings feature coming next!"),
-                              ),
-                            );
-                          },
-                        ),
+                        _buildRoleBasedDashboardSection(),
                         const SizedBox(height: 20),
                       ],
 
@@ -278,7 +232,238 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🌟 ১. লগইন করা ইউজারের প্রোফাইল কার্ড
+  // 🌟 ওয়েবসাইটের হুবহু নাম দিয়ে তৈরি রোল ভিত্তিক মেনু সেকশন
+  Widget _buildRoleBasedDashboardSection() {
+    final role = _currentUser!.role.toUpperCase();
+
+    // 👑 ১. ADMIN রোলের জন্য (ওয়েবের মতো হুবহু)
+    if (role == 'ADMIN') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ADMIN DASHBOARD',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _optionTile(
+            context,
+            icon: Icons.dashboard_rounded,
+            iconColor: AppColors.coral,
+            title: "Overview",
+            subtitle: "Platform statistics, revenue & insights",
+            badgeText: "Admin",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Overview (/admin-dashboard)")),
+              );
+            },
+          ),
+          _optionTile(
+            context,
+            icon: Icons.people_alt_rounded,
+            iconColor: const Color(0xFF0FA894),
+            title: "Manage Users",
+            subtitle: "View, manage & ban user accounts",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Manage Users (/admin-dashboard/users)")),
+              );
+            },
+          ),
+          _optionTile(
+            context,
+            icon: Icons.category_rounded,
+            iconColor: const Color(0xFFD97706),
+            title: "Categories",
+            subtitle: "Create, edit and organize service categories",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Categories (/admin-dashboard/categories)")),
+              );
+            },
+          ),
+          _optionTile(
+            context,
+            icon: Icons.account_balance_wallet_rounded,
+            iconColor: const Color(0xFF6366F1),
+            title: "Payments",
+            subtitle: "Platform-wide transaction history & fees",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Payments (/admin-dashboard/payments)")),
+              );
+            },
+          ),
+          _optionTile(
+            context,
+            icon: Icons.person_rounded,
+            iconColor: AppColors.ink,
+            title: "Profile",
+            subtitle: "Admin account credentials & settings",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Profile (/admin-dashboard/profile)")),
+              );
+            },
+          ),
+        ],
+      );
+    }
+
+    // 🔧 ২. TECHNICIAN রোলের জন্য (ওয়েবের মতো হুবহু)
+    if (role == 'TECHNICIAN') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'TECHNICIAN DASHBOARD',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _optionTile(
+            context,
+            icon: Icons.dashboard_rounded,
+            iconColor: const Color(0xFF0FA894),
+            title: "Overview",
+            subtitle: "Daily requests, rating & performance overview",
+            badgeText: "Tech",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Overview (/technician-dashboard)")),
+              );
+            },
+          ),
+          _optionTile(
+            context,
+            icon: Icons.assignment_rounded,
+            iconColor: AppColors.coral,
+            title: "Job requests",
+            subtitle: "View and accept incoming customer repair requests",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Job requests (/technician-dashboard/requests)")),
+              );
+            },
+          ),
+          _optionTile(
+            context,
+            icon: Icons.handyman_rounded,
+            iconColor: const Color(0xFFD97706),
+            title: "My services",
+            subtitle: "Manage your services, descriptions and hourly rates",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to My services (/technician-dashboard/services)")),
+              );
+            },
+          ),
+          _optionTile(
+            context,
+            icon: Icons.account_balance_wallet_rounded,
+            iconColor: const Color(0xFF059669),
+            title: "Payments",
+            subtitle: "Check completed job earnings & withdraw balance",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Payments (/technician-dashboard/payments)")),
+              );
+            },
+          ),
+          _optionTile(
+            context,
+            icon: Icons.person_rounded,
+            iconColor: AppColors.ink,
+            title: "Profile",
+            subtitle: "Technician skills, bio and profile settings",
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Navigating to Profile (/technician-dashboard/profile)")),
+              );
+            },
+          ),
+        ],
+      );
+    }
+
+    // 👤 ৩. CUSTOMER রোলের জন্য (ওয়েবের মতো হুবহু)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'CUSTOMER DASHBOARD',
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.1,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(height: 10),
+        _optionTile(
+          context,
+          icon: Icons.dashboard_rounded,
+          iconColor: AppColors.coral,
+          title: "Overview",
+          subtitle: "Summary of ongoing repairs and recommendations",
+          badgeText: "Customer",
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Navigating to Overview (/dashboard)")),
+            );
+          },
+        ),
+        _optionTile(
+          context,
+          icon: Icons.calendar_month_rounded,
+          iconColor: const Color(0xFF0FA894),
+          title: "My Bookings",
+          subtitle: "Track live status, dates and past technician repairs",
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Navigating to My Bookings (/dashboard/bookings)")),
+            );
+          },
+        ),
+        _optionTile(
+          context,
+          icon: Icons.receipt_long_rounded,
+          iconColor: const Color(0xFF6366F1),
+          title: "Payments",
+          subtitle: "Invoices, payment receipts and transaction records",
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Navigating to Payments (/dashboard/payments)")),
+            );
+          },
+        ),
+        _optionTile(
+          context,
+          icon: Icons.person_rounded,
+          iconColor: AppColors.ink,
+          title: "Profile",
+          subtitle: "Manage personal account details and address",
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Navigating to Profile (/dashboard/profile)")),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // 🌟 লগইন করা ইউজারের প্রোফাইল কার্ড
   Widget _buildLoggedInCard() {
     final initials = _currentUser!.name.isNotEmpty
         ? _currentUser!.name[0].toUpperCase()
@@ -388,7 +573,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🌟 ২. লগআউট অবস্থায় প্রম্পট কার্ড
+  // 🌟 লগআউট অবস্থায় প্রম্পট কার্ড
   Widget _buildLoggedOutCard() {
     return Container(
       padding: const EdgeInsets.all(18),
