@@ -12,6 +12,9 @@ import '../../technician_dashboard/screens/technician_overview_screen.dart';
 import '../../technician_dashboard/screens/technician_requests_screen.dart';
 import '../../technician_dashboard/screens/technician_services_screen.dart';
 import '../../technician_dashboard/screens/technician_profile_screen.dart';
+import '../../customer_dashboard/screens/customer_overview_screen.dart';
+import '../../customer_dashboard/screens/customer_bookings_screen.dart';
+import '../../customer_dashboard/screens/customer_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -434,8 +437,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           subtitle: "Summary of ongoing repairs and recommendations",
           badgeText: "Customer",
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Navigating to Overview (/dashboard)")),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CustomerOverviewScreen()),
             );
           },
         ),
@@ -446,8 +450,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: "My Bookings",
           subtitle: "Track live status, dates and past technician repairs",
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Navigating to My Bookings (/dashboard/bookings)")),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CustomerBookingsScreen()),
             );
           },
         ),
@@ -470,8 +475,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: "Profile",
           subtitle: "Manage personal account details and address",
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Navigating to Profile (/dashboard/profile)")),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CustomerProfileScreen()),
             );
           },
         ),
@@ -548,19 +554,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? const Color(0xFFFFFBEB)
                                 : const Color(0xFFFFF1F2),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isTech
-                              ? const Color(0xFFA7F3D0)
-                              : isCustomer
-                                  ? const Color(0xFFFDE68A)
-                                  : const Color(0xFFFECDD3),
-                        ),
                       ),
                       child: Text(
                         _currentUser!.role,
                         style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                           color: isTech
                               ? const Color(0xFF059669)
                               : isCustomer
@@ -571,13 +570,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   _currentUser!.email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: AppColors.textMuted,
                   ),
                 ),
@@ -589,83 +588,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🌟 লগআউট অবস্থায় প্রম্পট কার্ড
+  // 🌟 লগইন না করা থাকলে প্রম্পট কার্ড
   Widget _buildLoggedOutCard() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
+      child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.coral.withValues(alpha: 0.12),
+              color: AppColors.coral.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.person_rounded,
+              Icons.lock_person_rounded,
               color: AppColors.coral,
               size: 32,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Welcome to FixItNow',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Sign in to book & track technicians',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 12),
+          const Text(
+            'Sign In to FixItNow',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.ink,
             ),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final loggedIn = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginScreen(),
+          const SizedBox(height: 4),
+          const Text(
+            'Access your custom dashboard, orders, and services',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                final loggedIn = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+                if (loggedIn == true) {
+                  _loadUserProfile();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.coral,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              );
-              if (loggedIn == true) {
-                _loadUserProfile();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.coral,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: const Text(
-              'Log In',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+              child: const Text(
+                'Log In / Register',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -674,6 +661,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // 🌟 অপশন টাইল উইজেট (ডিজাইন সিস্টেম অনুযায়ী)
   Widget _optionTile(
     BuildContext context, {
     required IconData icon,
@@ -685,24 +673,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
+      child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Material(
-        color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
-          child: Padding(
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.12),
+                    color: iconColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: iconColor, size: 22),
@@ -714,31 +702,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.ink,
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.ink,
+                              ),
                             ),
                           ),
                           if (badgeText != null) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: iconColor.withValues(alpha: 0.12),
+                                color: AppColors.coral.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 badgeText,
-                                style: TextStyle(
-                                  color: iconColor,
-                                  fontSize: 10,
+                                style: const TextStyle(
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.bold,
+                                  color: AppColors.coral,
                                 ),
                               ),
                             ),
@@ -748,8 +740,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 11.5,
                           color: AppColors.textMuted,
                         ),
                       ),
