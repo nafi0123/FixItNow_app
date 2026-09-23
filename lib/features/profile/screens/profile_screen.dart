@@ -8,6 +8,10 @@ import '../../admin/screens/admin_overview_screen.dart';
 import '../../admin/screens/admin_users_screen.dart';
 import '../../admin/screens/admin_categories_screen.dart';
 import '../../admin/screens/admin_profile_screen.dart';
+import '../../technician_dashboard/screens/technician_overview_screen.dart';
+import '../../technician_dashboard/screens/technician_requests_screen.dart';
+import '../../technician_dashboard/screens/technician_services_screen.dart';
+import '../../technician_dashboard/screens/technician_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -347,8 +351,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: "Daily requests, rating & performance overview",
             badgeText: "Tech",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Overview (/technician-dashboard)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TechnicianOverviewScreen()),
               );
             },
           ),
@@ -359,8 +364,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "Job requests",
             subtitle: "View and accept incoming customer repair requests",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Job requests (/technician-dashboard/requests)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TechnicianRequestsScreen()),
               );
             },
           ),
@@ -371,8 +377,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "My services",
             subtitle: "Manage your services, descriptions and hourly rates",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to My services (/technician-dashboard/services)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TechnicianServicesScreen()),
               );
             },
           ),
@@ -395,8 +402,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "Profile",
             subtitle: "Technician skills, bio and profile settings",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Profile (/technician-dashboard/profile)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TechnicianProfileScreen()),
               );
             },
           ),

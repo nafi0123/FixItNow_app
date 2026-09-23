@@ -5,6 +5,7 @@ class UserModel {
   final String role; // "CUSTOMER", "TECHNICIAN", "ADMIN"
   final bool isBanned;
   final String? createdAt;
+  final Map<String, dynamic>? technicianProfile;
 
   UserModel({
     required this.id,
@@ -13,6 +14,7 @@ class UserModel {
     required this.role,
     this.isBanned = false,
     this.createdAt,
+    this.technicianProfile,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class UserModel {
       role: (json['role'] ?? 'CUSTOMER').toString().toUpperCase(),
       isBanned: json['isBanned'] as bool? ?? false,
       createdAt: json['createdAt']?.toString(),
+      technicianProfile: json['technicianProfile'] is Map<String, dynamic> ? json['technicianProfile'] as Map<String, dynamic> : null,
     );
   }
 
@@ -34,6 +37,7 @@ class UserModel {
       'role': role,
       'isBanned': isBanned,
       if (createdAt != null) 'createdAt': createdAt,
+      if (technicianProfile != null) 'technicianProfile': technicianProfile,
     };
   }
 }
