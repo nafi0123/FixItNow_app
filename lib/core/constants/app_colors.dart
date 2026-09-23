@@ -8,4 +8,9 @@ class AppColors {
   static const Color border = Color(0xFFE5E7EB);    // বর্ডার কালার
   static const Color textDark = Color(0xFF1F2937);  // টেক্সট কালার
   static const Color textMuted = Color(0xFF6B707E); // 👈 গ্রে সাবটাইটেল কালার
+
+  // 🌟 Aliases for consistency across components
+  static const Color primary = coral;
+  static const Color secondary = teal;
+  static const Color muted = textMuted;
 }

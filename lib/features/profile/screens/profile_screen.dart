@@ -4,6 +4,10 @@ import '../../faq/screens/faq_screen.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../admin/screens/admin_overview_screen.dart';
+import '../../admin/screens/admin_users_screen.dart';
+import '../../admin/screens/admin_categories_screen.dart';
+import '../../admin/screens/admin_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -259,8 +263,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: "Platform statistics, revenue & insights",
             badgeText: "Admin",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Overview (/admin-dashboard)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminOverviewScreen()),
               );
             },
           ),
@@ -271,8 +276,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "Manage Users",
             subtitle: "View, manage & ban user accounts",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Manage Users (/admin-dashboard/users)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
               );
             },
           ),
@@ -283,8 +289,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "Categories",
             subtitle: "Create, edit and organize service categories",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Categories (/admin-dashboard/categories)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminCategoriesScreen()),
               );
             },
           ),
@@ -307,8 +314,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "Profile",
             subtitle: "Admin account credentials & settings",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Profile (/admin-dashboard/profile)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminProfileScreen()),
               );
             },
           ),

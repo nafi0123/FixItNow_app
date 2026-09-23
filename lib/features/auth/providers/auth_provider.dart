@@ -57,6 +57,7 @@ class AuthService {
 
   // ৪. সিনক্রোনাসলি ক্যাশড ইউজার পাওয়ার অপশন
   static UserModel? get currentUser => _cachedUser;
+  static String? get token => _cachedToken;
   static bool get isLoggedIn => _cachedUser != null;
 
   // ৫. লগআউট (ক্যাশ ও ডিস্ক ডাটা সম্পূর্ণ ক্লিয়ার)
