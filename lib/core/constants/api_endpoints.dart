@@ -8,6 +8,11 @@ class ApiEndpoints {
   static String get categories => '$baseUrl/api/categories';
   static String get services => '$baseUrl/api/services';
   static String get technicians => '$baseUrl/api/technicians';
+  
+  // Payment Endpoints
+  static String get payments => '$baseUrl/api/payments';
+  static String get createPaymentSession => '$baseUrl/api/payments/create';
+
   // Auth Endpoints
   static String get login => '$baseUrl/api/auth/login';
   static String get register => '$baseUrl/api/auth/register';

@@ -4,6 +4,10 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../auth/screens/login_screen.dart';
+import '../../customer_dashboard/services/customer_service.dart';
+import '../../customer_dashboard/screens/customer_bookings_screen.dart';
 
 // ==========================================
 // 🌟 টেকনিশিয়ান ডিটেইল মডেল
@@ -210,9 +214,43 @@ class _TechnicianDetailScreenState extends State<TechnicianDetailScreen> {
   }
 
   // 🌟 বুকিং বটম শীট ডায়ালগ
-  void _openBookingSheet() {
+  Future<void> _openBookingSheet() async {
     if (_tech == null) return;
 
+    final user = await AuthService.getUser();
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Please log in as a Customer to book this technician."),
+          backgroundColor: AppColors.coral,
+          action: SnackBarAction(
+            label: "Login",
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (user.role.toUpperCase() != 'CUSTOMER') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Only Customer accounts can book technicians. You are logged in as a ${user.role}."),
+          backgroundColor: const Color(0xFFD97706),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1435,7 +1473,7 @@ class _TechnicianDetailSkeletonState extends State<_TechnicianDetailSkeleton>
 }
 
 // ==========================================
-// 🌟 বুকিং অ্যাপয়েন্টমেন্ট মডাল (Booking Modal)
+// 🌟 বুকিং অ্যাপয়েন্টমেন্ট মডাল (Web-Fidelity Booking Modal)
 // ==========================================
 class _BookingBottomSheet extends StatefulWidget {
   final TechnicianDetailModel technician;
@@ -1447,20 +1485,256 @@ class _BookingBottomSheet extends StatefulWidget {
 }
 
 class _BookingBottomSheetState extends State<_BookingBottomSheet> {
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  String _selectedSlot = "10:00 AM - 12:00 PM";
+  late DateTime _selectedDate;
+  String _selectedSlot = '';
+  final TextEditingController _customSlotController = TextEditingController();
+  TechServiceItem? _selectedService;
+  late double _currentPrice;
+  bool _isSubmitting = false;
 
-  final List<String> _defaultSlots = [
-    "09:00 AM - 11:00 AM",
-    "11:00 AM - 01:00 PM",
-    "02:00 PM - 04:00 PM",
-    "04:00 PM - 06:00 PM",
-  ];
+  late List<String> _slots;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = DateTime.now().add(const Duration(days: 1));
+    _currentPrice = widget.technician.basePrice;
+    _slots = _generateSlots(widget.technician.workingHours);
+    if (_slots.isNotEmpty) {
+      _selectedSlot = _slots[0];
+    } else {
+      _selectedSlot = '10:00 AM - 12:00 PM';
+    }
+  }
+
+  @override
+  void dispose() {
+    _customSlotController.dispose();
+    super.dispose();
+  }
+
+  // 🌟 কাজের সময় থেকে স্লট জেনারেশন (Web matching)
+  List<String> _generateSlots(String? workingHours) {
+    const defaultSlots = [
+      '09:00 AM - 11:00 AM',
+      '11:00 AM - 01:00 PM',
+      '02:00 PM - 04:00 PM',
+      '04:00 PM - 06:00 PM',
+    ];
+
+    if (workingHours == null || !workingHours.contains('-')) {
+      return defaultSlots;
+    }
+
+    try {
+      final parts = workingHours.split('-');
+      int? parseMinutes(String timeStr) {
+        final match = RegExp(r'^(\d{1,2}):(\d{2})\s*(AM|PM)$', caseSensitive: false)
+            .firstMatch(timeStr.trim());
+        if (match == null) return null;
+        int hours = int.parse(match.group(1)!);
+        int mins = int.parse(match.group(2)!);
+        String period = match.group(3)!.toUpperCase();
+        if (period == 'PM' && hours < 12) hours += 12;
+        if (period == 'AM' && hours == 12) hours = 0;
+        return hours * 60 + mins;
+      }
+
+      int startMins = parseMinutes(parts[0]) ?? 540; // 09:00 AM
+      int endMins = parseMinutes(parts[1]) ?? 1080;  // 06:00 PM
+
+      if (endMins <= startMins) {
+        return defaultSlots;
+      }
+
+      String formatMins(int total) {
+        int h = (total ~/ 60) % 24;
+        int m = total % 60;
+        String period = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        if (h == 0) h = 12;
+        return "${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')} $period";
+      }
+
+      final generated = <String>[];
+      int current = startMins;
+      const duration = 120; // 2 hours
+
+      while (current < endMins) {
+        int next = current + duration;
+        if (next > endMins) next = endMins;
+        if (next - current >= 30) {
+          generated.add("${formatMins(current)} - ${formatMins(next)}");
+        }
+        current = next;
+      }
+
+      return generated.isNotEmpty ? generated : defaultSlots;
+    } catch (_) {
+      return defaultSlots;
+    }
+  }
+
+  String _formatDate(DateTime dt) {
+    return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+  }
+
+  // 🌟 বুকিং জমা দেওয়ার লজিক (POST /api/bookings)
+  Future<void> _submitBooking() async {
+    final effectiveSlot = _customSlotController.text.trim().isNotEmpty
+        ? _customSlotController.text.trim()
+        : _selectedSlot;
+
+    if (effectiveSlot.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select or specify a time slot.'),
+          backgroundColor: Color(0xFFE11D48),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final res = await CustomerService.createBooking(
+      technicianProfileId: widget.technician.id,
+      bookingDate: _formatDate(_selectedDate),
+      slot: effectiveSlot,
+      serviceId: _selectedService?.id,
+    );
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    if (res.success) {
+      Navigator.pop(context); // Close sheet
+      _showBookingSuccessDialog(effectiveSlot);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.message),
+          backgroundColor: const Color(0xFFE11D48),
+        ),
+      );
+    }
+  }
+
+  void _showBookingSuccessDialog(String slot) {
+    showDialog(
+      context: context,
+      builder: (dlgCtx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF5),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFA7F3D0)),
+              ),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF059669),
+                size: 42,
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              "Booking Requested!",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Your appointment with ${widget.technician.name} on ${_formatDate(_selectedDate)} at $slot has been submitted.",
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF4B5563), height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFD97706)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Status: PENDING. Technician will accept or decline soon. You can pay once accepted!",
+                      style: TextStyle(fontSize: 11, color: Color(0xFF92400E), fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(dlgCtx),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Done", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dlgCtx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CustomerBookingsScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.coral,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text(
+                      "My Bookings",
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
+      ),
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1472,6 +1746,7 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // হ্যান্ডেল বার
               Center(
                 child: Container(
                   width: 40,
@@ -1482,50 +1757,153 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
+
+              // হেডার
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.coral.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.calendar_today_rounded,
-                      color: AppColors.coral,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      const Text(
-                        "Book Appointment",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.coral.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.calendar_month_rounded,
+                          color: AppColors.coral,
+                          size: 22,
                         ),
                       ),
-                      Text(
-                        "With ${widget.technician.name}",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Book Appointment",
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          Text(
+                            "With ${widget.technician.name}",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20, color: Colors.grey),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: AppColors.border),
+              const SizedBox(height: 16),
+
+              // ১. অফার করা সার্ভিস নির্বাচন (ঐচ্ছিক)
+              if (widget.technician.services.isNotEmpty) ...[
+                const Text(
+                  "Select Offered Service",
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.ink),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBF3),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: _selectedService?.id ?? '',
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.ink),
+                      items: [
+                        DropdownMenuItem<String>(
+                          value: '',
+                          child: Text(
+                            "Standard Hourly Rate (৳${widget.technician.basePrice.toInt()}/hr)",
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.ink),
+                          ),
+                        ),
+                        ...widget.technician.services.map((srv) {
+                          return DropdownMenuItem<String>(
+                            value: srv.id,
+                            child: Text(
+                              "${srv.name} — ৳${srv.price.toInt()} (${srv.duration})",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.ink),
+                            ),
+                          );
+                        }),
+                      ],
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == null || val.isEmpty) {
+                            _selectedService = null;
+                            _currentPrice = widget.technician.basePrice;
+                          } else {
+                            final match = widget.technician.services.firstWhere((s) => s.id == val);
+                            _selectedService = match;
+                            _currentPrice = match.price;
+                            if (match.duration.isNotEmpty) {
+                              _selectedSlot = match.duration;
+                            }
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // ২. টেকনিশিয়ানের কাজের সময় ব্যাজ
+              if (widget.technician.workingHours != null && widget.technician.workingHours!.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFFD97706)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Active Hours: ${widget.technician.workingHours!}${widget.technician.workingDays.isNotEmpty ? ' (${widget.technician.workingDays.join(", ")})' : ''}",
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF92400E),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 18),
+                ),
+                const SizedBox(height: 16),
+              ],
 
-              // ১. তারিখ নির্বাচন (Booking Date)
+              // ৩. তারিখ নির্বাচন
               const Text(
                 "Select Appointment Date",
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.ink),
               ),
               const SizedBox(height: 8),
               InkWell(
@@ -1534,87 +1912,190 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
                     context: context,
                     initialDate: _selectedDate,
                     firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 30)),
+                    lastDate: DateTime.now().add(const Duration(days: 45)),
                   );
                   if (picked != null) {
                     setState(() => _selectedDate = picked);
                   }
                 },
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFFBF3),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}",
+                        _formatDate(_selectedDate),
                         style: const TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.ink,
                         ),
                       ),
-                      const Icon(Icons.date_range_rounded, size: 18, color: AppColors.coral),
+                      const Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.coral),
                     ],
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
 
-              // ২. টাইম স্লট নির্বাচন
+              // ৪. টাইম স্লট নির্বাচন
               const Text(
-                "Preferred Time Slot",
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                "Select Preferred Time Slot",
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.ink),
               ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _defaultSlots.map((slot) {
-                  final isSel = _selectedSlot == slot;
+                children: _slots.map((slot) {
+                  final isSel = _customSlotController.text.isEmpty && _selectedSlot == slot;
                   return InkWell(
-                    onTap: () => setState(() => _selectedSlot = slot),
+                    onTap: () {
+                      _customSlotController.clear();
+                      setState(() => _selectedSlot = slot);
+                    },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                       decoration: BoxDecoration(
                         color: isSel ? AppColors.coral : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        slot,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: isSel ? Colors.white : const Color(0xFF374151),
+                        border: Border.all(
+                          color: isSel ? AppColors.coral : const Color(0xFFE5E7EB),
                         ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            slot,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: isSel ? Colors.white : const Color(0xFF374151),
+                            ),
+                          ),
+                          if (isSel) ...[
+                            const SizedBox(width: 4),
+                            const Icon(Icons.check_rounded, size: 13, color: Colors.white),
+                          ],
+                        ],
                       ),
                     ),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 24),
 
-              // কনফার্ম বুকিং বাটন
+              const SizedBox(height: 10),
+              TextField(
+                controller: _customSlotController,
+                onChanged: (_) => setState(() {}),
+                style: const TextStyle(fontSize: 12.5),
+                decoration: InputDecoration(
+                  hintText: "Or enter custom time (e.g. 05:30 PM)",
+                  hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                  filled: true,
+                  fillColor: const Color(0xFFF9FAFB),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.coral),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              // ৫. প্রাইস ও সামারি কার্ড
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBF3),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE7E2D8)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _selectedService != null ? "Service Price" : "Standard Rate",
+                          style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                        ),
+                        Text(
+                          "৳${_currentPrice.toInt()}",
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.ink),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Booking Date", style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+                        Text(
+                          _formatDate(_selectedDate),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.ink),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Time Slot", style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+                        Text(
+                          _customSlotController.text.trim().isNotEmpty
+                              ? _customSlotController.text.trim()
+                              : _selectedSlot,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.ink),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Divider(height: 1, color: Color(0xFFE7E2D8)),
+                    const SizedBox(height: 8),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Initial Status", style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.ink)),
+                        Text(
+                          "PENDING APPROVAL",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFD97706),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ৬. সাবমিট বাটন
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          "Appointment requested with ${widget.technician.name} for ${_selectedDate.day}/${_selectedDate.month} at $_selectedSlot!",
-                        ),
-                        backgroundColor: const Color(0xFF059669),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  },
+                  onPressed: _isSubmitting ? null : _submitBooking,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.coral,
                     elevation: 0,
@@ -1623,14 +2104,20 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    "Confirm Appointment",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text(
+                          "Confirm Booking",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],

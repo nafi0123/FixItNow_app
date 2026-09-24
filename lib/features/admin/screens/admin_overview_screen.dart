@@ -8,6 +8,7 @@ import '../services/admin_service.dart';
 import 'admin_users_screen.dart';
 import 'admin_categories_screen.dart';
 import 'admin_profile_screen.dart';
+import '../../payments/screens/payments_screen.dart';
 
 class AdminOverviewScreen extends StatefulWidget {
   const AdminOverviewScreen({super.key});
@@ -298,6 +299,20 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen>
                         await Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const AdminCategoriesScreen()),
+                        );
+                        _loadOverviewData(isBackground: true);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _buildQuickAction(
+                      icon: Icons.account_balance_wallet_outlined,
+                      iconColor: const Color(0xFF6366F1),
+                      title: 'Platform Payments Audit',
+                      subtitle: 'Monitor platform-wide transaction history and status logs',
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const PaymentsScreen(userRole: "ADMIN")),
                         );
                         _loadOverviewData(isBackground: true);
                       },

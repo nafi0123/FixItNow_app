@@ -5,6 +5,7 @@ import '../../technicians/screens/technicians_screen.dart';
 import '../services/customer_service.dart';
 import 'customer_bookings_screen.dart';
 import 'customer_profile_screen.dart';
+import '../../payments/screens/payments_screen.dart';
 
 class CustomerOverviewScreen extends StatefulWidget {
   const CustomerOverviewScreen({super.key});
@@ -351,6 +352,14 @@ class _CustomerOverviewScreenState extends State<CustomerOverviewScreen> {
           title: "TOTAL SPENT",
           value: "৳${spent.toStringAsFixed(0)}",
           subtitle: "Completed invoices",
+          badgeText: "View",
+          badgeColor: AppColors.coral,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaymentsScreen(userRole: 'CUSTOMER')),
+            );
+          },
         ),
       ],
     );
@@ -490,6 +499,25 @@ class _CustomerOverviewScreenState extends State<CustomerOverviewScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const CustomerBookingsScreen()),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _actionTile(
+                icon: Icons.receipt_long_rounded,
+                title: "Payments",
+                subtitle: "Invoices & receipts",
+                gradient: const [Color(0xFF6366F1), Color(0xFF4338CA)],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PaymentsScreen(userRole: 'CUSTOMER')),
                   );
                 },
               ),

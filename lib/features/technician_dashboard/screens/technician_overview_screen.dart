@@ -8,6 +8,7 @@ import '../services/technician_service.dart';
 import 'technician_requests_screen.dart';
 import 'technician_services_screen.dart';
 import 'technician_profile_screen.dart';
+import '../../payments/screens/payments_screen.dart';
 
 class TechnicianOverviewScreen extends StatefulWidget {
   const TechnicianOverviewScreen({super.key});
@@ -384,6 +385,20 @@ class _TechnicianOverviewScreenState extends State<TechnicianOverviewScreen>
                         await Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const TechnicianProfileScreen()),
+                        );
+                        _loadOverviewData(isBackground: true);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _buildQuickAction(
+                      icon: Icons.account_balance_wallet_outlined,
+                      iconColor: const Color(0xFF10B981),
+                      title: 'Payments & Earnings',
+                      subtitle: 'Track platform payments, customer invoices and receipts',
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const PaymentsScreen(userRole: "TECHNICIAN")),
                         );
                         _loadOverviewData(isBackground: true);
                       },

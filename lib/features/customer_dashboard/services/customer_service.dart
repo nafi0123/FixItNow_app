@@ -528,4 +528,97 @@ class CustomerService {
       return CustomerActionResponse(success: false, message: 'Network error: $e');
     }
   }
+
+  // ==========================================
+  // ৬. নতুন বুকিং তৈরি করা (POST /api/bookings)
+  // ==========================================
+  static Future<CustomerActionResponse> createBooking({
+    required String technicianProfileId,
+    required String bookingDate,
+    required String slot,
+    String? serviceId,
+  }) async {
+    final token = await AuthService.getToken();
+    if (token == null || token.isEmpty) {
+      return CustomerActionResponse(
+        success: false,
+        message: 'Please log in as a customer to book an appointment.',
+      );
+    }
+
+    try {
+      final uri = Uri.parse('$baseUrl/api/bookings');
+      final bodyMap = <String, dynamic>{
+        'technicianProfileId': technicianProfileId,
+        'bookingDate': bookingDate,
+        'slot': slot,
+      };
+      if (serviceId != null && serviceId.isNotEmpty) {
+        bodyMap['serviceId'] = serviceId;
+      }
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(bodyMap),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
+        _memoryBookings = null;
+        _memoryOverview = null;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove(_kBookingsCacheKey);
+          await prefs.remove(_kOverviewCacheKey);
+        } catch (_) {}
+
+        return CustomerActionResponse(
+          success: true,
+          message: data['message']?.toString() ?? 'Appointment booked successfully! Track status in dashboard.',
+          data: data['data'],
+        );
+      } else {
+        return CustomerActionResponse(
+          success: false,
+          message: data['message']?.toString() ?? 'Failed to create booking.',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) print("createBooking error: $e");
+      return CustomerActionResponse(success: false, message: 'Network error: $e');
+    }
+  }
+
+  // ==========================================
+  // ৭. নির্দিষ্ট বুকিংয়ের ডিটেইলস (GET /api/bookings/:id)
+  // ==========================================
+  static Future<CustomerBookingItem?> getBookingDetails(String bookingId) async {
+    final token = await AuthService.getToken();
+    if (token == null || token.isEmpty) return null;
+
+    try {
+      final uri = Uri.parse('$baseUrl/api/bookings/$bookingId');
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true && data['data'] != null) {
+        return CustomerBookingItem.fromJson(data['data']);
+      }
+      return null;
+    } catch (e) {
+      if (kDebugMode) print("getBookingDetails error: $e");
+      return null;
+    }
+  }
 }

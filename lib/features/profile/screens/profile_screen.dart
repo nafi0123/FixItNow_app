@@ -15,6 +15,7 @@ import '../../technician_dashboard/screens/technician_profile_screen.dart';
 import '../../customer_dashboard/screens/customer_overview_screen.dart';
 import '../../customer_dashboard/screens/customer_bookings_screen.dart';
 import '../../customer_dashboard/screens/customer_profile_screen.dart';
+import '../../payments/screens/payments_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -309,8 +310,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "Payments",
             subtitle: "Platform-wide transaction history & fees",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Payments (/admin-dashboard/payments)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PaymentsScreen(userRole: "ADMIN")),
               );
             },
           ),
@@ -393,8 +395,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: "Payments",
             subtitle: "Check completed job earnings & withdraw balance",
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Navigating to Payments (/technician-dashboard/payments)")),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PaymentsScreen(userRole: "TECHNICIAN")),
               );
             },
           ),
@@ -463,8 +466,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: "Payments",
           subtitle: "Invoices, payment receipts and transaction records",
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Navigating to Payments (/dashboard/payments)")),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaymentsScreen(userRole: "CUSTOMER")),
             );
           },
         ),

@@ -1,8 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../admin/services/admin_service.dart' show PaginationMeta;
 import '../../technicians/screens/technicians_screen.dart';
 import '../services/customer_service.dart';
+import '../../payments/services/payment_service.dart';
+import '../../payments/screens/in_app_payment_screen.dart';
+import '../../../core/utils/url_helper.dart';
 
 class CustomerBookingsScreen extends StatefulWidget {
   final String? initialFilter;
@@ -21,6 +25,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
   String _statusFilter = "ALL";
   final TextEditingController _searchController = TextEditingController();
   int _currentPage = 1;
+  String? _payingBookingId;
 
   final List<String> _filterTabs = ["ALL", "PENDING", "ACCEPTED", "COMPLETED", "DECLINED"];
 
@@ -111,6 +116,90 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
     }
   }
 
+
+  // 🌟 পেমেন্ট সম্পন্ন করার লজিক (SSLCommerz সেশন ও ব্রাউজার গেটওয়ে ওপেন)
+  Future<void> _handlePayNow(CustomerBookingItem booking) async {
+    if (booking.status != 'ACCEPTED') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Payment is only available once technician accepts the request."),
+          backgroundColor: Color(0xFFD97706),
+        ),
+      );
+      return;
+    }
+
+    if (booking.paymentStatus == 'PAID') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("This booking is already paid!"),
+          backgroundColor: Color(0xFF059669),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _payingBookingId = booking.id);
+
+    try {
+      final currentOrigin = kIsWeb ? Uri.base.toString() : null;
+
+      final res = await PaymentService.initiatePayment(
+        bookingId: booking.id,
+        redirectUrl: currentOrigin,
+      );
+
+      if (res.success && res.paymentUrl != null) {
+        if (!mounted) return;
+        setState(() => _payingBookingId = null);
+
+        if (kIsWeb) {
+          // 💻 ওয়েবে টেস্টিং: কোনো নতুন ট্যাব খুলবে না! সেম ট্যাবে সরাসরি রিডাইরেক্ট (Next.js-এর মতো)
+          openUrlUniversal(res.paymentUrl!, newTab: false);
+        } else {
+          // 📱 মোবাইলে: ১০০% ইন-অ্যাপ নেটিভ ফুল স্ক্রিন (কোনো ব্রাউজার বা ট্যাব নয়)
+          await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => InAppPaymentScreen(
+                paymentUrl: res.paymentUrl!,
+                bookingId: booking.id,
+                amount: booking.price,
+                technicianName: booking.technicianName,
+              ),
+            ),
+          );
+
+          if (mounted) {
+            _loadBookings(forceRefresh: true);
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res.message),
+              backgroundColor: const Color(0xFFE11D48),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Payment error: $e"),
+            backgroundColor: const Color(0xFFE11D48),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _payingBookingId = null);
+      }
+    }
+  }
+
   // 🌟 বুকিং ডিটেইলস বটম শিট
   void _showBookingDetailsSheet(CustomerBookingItem item) {
     showModalBottomSheet(
@@ -194,7 +283,108 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
               ),
               _detailRow(Icons.tag_rounded, "Booking ID", item.id),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // ১. পেমেন্ট অ্যাকশন ও স্ট্যাটাস ইনফো
+              if (item.status == 'ACCEPTED' && item.paymentStatus != 'PAID') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _payingBookingId == item.id
+                        ? null
+                        : () {
+                            Navigator.pop(ctx);
+                            _handlePayNow(item);
+                          },
+                    icon: _payingBookingId == item.id
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.credit_card_rounded, color: Colors.white, size: 18),
+                    label: Text(
+                      _payingBookingId == item.id
+                          ? "Connecting Gateway..."
+                          : "Pay ৳${item.price.toStringAsFixed(0)} Now",
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13.5),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0FA894),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ] else if (item.paymentStatus == 'PAID') ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF059669)),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Payment completed successfully via SSLCommerz gateway.",
+                          style: TextStyle(fontSize: 11.5, color: Color(0xFF065F46), fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (item.status == 'PENDING') ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFD97706)),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Technician must accept your booking request before payment can be made.",
+                          style: TextStyle(fontSize: 11.5, color: Color(0xFF92400E), fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (item.status == 'DECLINED') ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF1F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFECDD3)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.cancel_outlined, size: 16, color: Color(0xFFE11D48)),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "This booking was declined by the technician. Payment is unavailable.",
+                          style: TextStyle(fontSize: 11.5, color: Color(0xFF9F1239), fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               // রিভিউ বাটন যদি সার্ভিস সম্পন্ন হয়ে থাকে
               if (item.status == 'COMPLETED') ...[
@@ -693,20 +883,65 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getStatusBg(item.status),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  item.status,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    color: _getStatusColor(item.status),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: _getStatusBg(item.status),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      item.status,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: _getStatusColor(item.status),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: item.paymentStatus == 'PAID'
+                          ? const Color(0xFFECFDF5)
+                          : const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: item.paymentStatus == 'PAID'
+                            ? const Color(0xFFA7F3D0)
+                            : const Color(0xFFFDE68A),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          item.paymentStatus == 'PAID'
+                              ? Icons.check_circle_rounded
+                              : Icons.hourglass_top_rounded,
+                          size: 10,
+                          color: item.paymentStatus == 'PAID'
+                              ? const Color(0xFF059669)
+                              : const Color(0xFFD97706),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          item.paymentStatus == 'PAID' ? 'PAID' : 'UNPAID',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: item.paymentStatus == 'PAID'
+                                ? const Color(0xFF059669)
+                                : const Color(0xFFD97706),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -762,16 +997,23 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
               ),
               Row(
                 children: [
-                  if (item.status == 'COMPLETED') ...[
+                  // ১. Pay Now Button (যদি ACCEPTED এবং UNPAID থাকে)
+                  if (item.status == 'ACCEPTED' && item.paymentStatus != 'PAID') ...[
                     ElevatedButton.icon(
-                      onPressed: () => _showReviewDialog(item),
-                      icon: const Icon(Icons.star_rounded, size: 14, color: Colors.white),
-                      label: const Text(
-                        "Review",
-                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                      onPressed: _payingBookingId == item.id ? null : () => _handlePayNow(item),
+                      icon: _payingBookingId == item.id
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.credit_card_rounded, size: 14, color: Colors.white),
+                      label: Text(
+                        _payingBookingId == item.id ? "Connecting..." : "Pay ৳${item.price.toStringAsFixed(0)}",
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF59E0B),
+                        backgroundColor: const Color(0xFF0FA894),
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -779,6 +1021,49 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen> {
                     ),
                     const SizedBox(width: 8),
                   ],
+
+                  // ২. রিভিউ বাটন বা রিভিউড স্ট্যাটাস (যদি COMPLETED থাকে)
+                  if (item.status == 'COMPLETED') ...[
+                    if (item.review != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded, size: 14, color: Color(0xFFD97706)),
+                            const SizedBox(width: 3),
+                            Text(
+                              "Reviewed (${item.review?['rating'] ?? 5}★)",
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ] else ...[
+                      ElevatedButton.icon(
+                        onPressed: () => _showReviewDialog(item),
+                        icon: const Icon(Icons.star_rounded, size: 14, color: Colors.white),
+                        label: const Text(
+                          "Review",
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF59E0B),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ],
+
                   OutlinedButton.icon(
                     onPressed: () => _showBookingDetailsSheet(item),
                     icon: const Icon(Icons.visibility_outlined, size: 14),

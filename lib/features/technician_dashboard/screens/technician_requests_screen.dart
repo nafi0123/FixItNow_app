@@ -155,6 +155,17 @@ class _TechnicianRequestsScreenState extends State<TechnicianRequestsScreen>
   // 🌟 Action Handler (Accept, Decline, Complete)
   Future<void> _handleStatusChange(TechnicianBookingItem booking, String newStatus) async {
     final messenger = ScaffoldMessenger.of(context);
+
+    if (newStatus == 'COMPLETED' && booking.paymentStatus?.toUpperCase() != 'PAID') {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Cannot complete job! Customer has not completed payment yet.'),
+          backgroundColor: Color(0xFFE11D48),
+        ),
+      );
+      return;
+    }
+
     setState(() => _updatingBookingId = booking.id);
 
     final res = await TechnicianService.updateBookingStatus(
@@ -238,9 +249,19 @@ class _TechnicianRequestsScreenState extends State<TechnicianRequestsScreen>
           preferredSize: const Size.fromHeight(1),
           child: Container(color: const Color(0xFFE7E2D8), height: 1),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, size: 20, color: Color(0xFF1E2026)),
+            tooltip: 'Refresh Requests',
+            onPressed: () => _fetchBookings(isBackground: false),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: RefreshIndicator(
+        onRefresh: () => _fetchBookings(isBackground: false),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
         child: DashboardDataTable<TechnicianBookingItem>(
           title: 'Job Requests',
           subtitle: 'Manage all customer repair and service bookings in real-time.',
@@ -439,20 +460,45 @@ class _TechnicianRequestsScreenState extends State<TechnicianRequestsScreen>
                         ],
                       )
                     else if (isAccepted)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _handleStatusChange(booking, 'COMPLETED'),
-                          icon: const Icon(Icons.done_all, size: 16, color: Colors.white),
-                          label: const Text('Mark Job as Completed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3B82F6),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
-                          ),
-                        ),
-                      )
+                      (booking.paymentStatus?.toUpperCase() == 'PAID')
+                          ? SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () => _handleStatusChange(booking, 'COMPLETED'),
+                                icon: const Icon(Icons.done_all, size: 16, color: Colors.white),
+                                label: const Text('Mark Job as Completed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF059669),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  elevation: 0,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFFBEB),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFFDE68A)),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.hourglass_top_rounded, size: 14, color: Color(0xFFD97706)),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Awaiting Customer Payment',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFD97706),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
                     else if (isCompleted)
                       Row(
                         children: const [
@@ -466,6 +512,7 @@ class _TechnicianRequestsScreenState extends State<TechnicianRequestsScreen>
               ),
             );
           },
+        ),
         ),
       ),
     );
