@@ -18,7 +18,7 @@ class CustomNavbar extends StatefulWidget implements PreferredSizeWidget {
   State<CustomNavbar> createState() => _CustomNavbarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(100);
+  Size get preferredSize => const Size.fromHeight(92);
 }
 
 class _CustomNavbarState extends State<CustomNavbar> {
@@ -64,9 +64,13 @@ class _CustomNavbarState extends State<CustomNavbar> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+    return Container(
+      color: AppColors.ink,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
         // ১. টপ গ্রেডিয়েন্ট লাইন (Coral -> Teal)
         Container(
           height: 3,
@@ -331,7 +335,9 @@ class _CustomNavbarState extends State<CustomNavbar> {
           ),
         ),
       ],
-    );
+    ),
+  ),
+);
   }
 
   Widget _navButton(String title, VoidCallback onTap) {

@@ -118,23 +118,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'My Account',
-          style: TextStyle(
-            color: AppColors.ink,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.border, height: 1),
-        ),
-      ),
+      appBar: Navigator.canPop(context)
+          ? AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'My Account',
+                style: TextStyle(
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              centerTitle: true,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(color: AppColors.border, height: 1),
+              ),
+            )
+          : null,
       body: _isLoading
           ? const _ProfileScreenSkeleton()
           : SingleChildScrollView(
@@ -145,6 +151,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (!Navigator.canPop(context)) ...[
+                        const Text(
+                          'My Account',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.ink,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       // ১. ইউজার লগইন থাকলে প্রোফাইল কার্ড, না থাকলে লগইন প্রম্পট কার্ড
                       _currentUser != null
                           ? _buildLoggedInCard()
