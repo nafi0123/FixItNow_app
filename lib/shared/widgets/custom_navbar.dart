@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ class CustomNavbar extends StatefulWidget implements PreferredSizeWidget {
   State<CustomNavbar> createState() => _CustomNavbarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(92);
+  Size get preferredSize => const Size.fromHeight(65);
 }
 
 class _CustomNavbarState extends State<CustomNavbar> {
@@ -64,56 +65,17 @@ class _CustomNavbarState extends State<CustomNavbar> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    return Container(
-      color: AppColors.ink,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-        // ১. টপ গ্রেডিয়েন্ট লাইন (Coral -> Teal)
-        Container(
-          height: 3,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [AppColors.coral, AppColors.teal]),
-          ),
-        ),
-
-        // ২. টপ ইউটিলিটি স্ট্রিপ
-        Container(
-          color: AppColors.ink,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: AppColors.teal,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "142 technicians online now",
-                    style: TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                ],
-              ),
-              if (!isMobile)
-                const Text(
-                  "Book before 6pm for same-day service",
-                  style: TextStyle(color: Colors.white54, fontSize: 11),
-                ),
-            ],
-          ),
-        ),
-
-        // ৩. মেইন নেভবার (Cream Background)
-        Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Container(
+        color: AppColors.cream,
+        child: SafeArea(
+          bottom: false,
+          child: Container(
           decoration: const BoxDecoration(
             color: AppColors.cream,
             border: Border(
@@ -334,10 +296,9 @@ class _CustomNavbarState extends State<CustomNavbar> {
             ],
           ),
         ),
-      ],
+      ),
     ),
-  ),
-);
+  );
   }
 
   Widget _navButton(String title, VoidCallback onTap) {
